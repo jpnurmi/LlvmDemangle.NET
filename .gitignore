@@ -1,0 +1,8 @@
+bin/
+obj/
+zig-out/
+.zig-cache/
+*.user
+*.suo
+.vs/
+.idea/

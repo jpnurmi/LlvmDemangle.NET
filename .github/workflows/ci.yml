@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  native:
+    name: Build native libraries
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: mlugg/setup-zig@v2
+        with:
+          version: 0.15.2
+
+      - name: Build all targets
+        working-directory: native
+        run: zig build
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: native-libs
+          path: native/zig-out/
+
+  test:
+    name: Test (${{ matrix.os }})
+    needs: native
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            rid: linux-x64
+          - os: windows-latest
+            rid: win-x64
+          - os: macos-latest
+            rid: osx-arm64
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.x
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: native-libs
+          path: native/zig-out/
+
+      - name: Test
+        run: dotnet test --configuration Release
+
+  pack:
+    name: Pack NuGet
+    needs: [native, test]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.x
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: native-libs
+          path: native/zig-out/
+
+      - name: Pack
+        run: dotnet pack src/LlvmDemangle/LlvmDemangle.csproj --configuration Release --output artifacts
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nuget-package
+          path: artifacts/*.nupkg
