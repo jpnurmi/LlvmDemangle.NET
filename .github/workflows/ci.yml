@@ -104,43 +104,16 @@ jobs:
             mcr.microsoft.com/dotnet/sdk:8.0-alpine3.21 \
             dotnet test ${{ env.TEST_PROJECT }} -c Release
 
-  test-linux-arm32:
-    name: Test (${{ matrix.name }})
-    needs: native
-    runs-on: ubuntu-24.04-arm
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - { name: linux-arm, image: "mcr.microsoft.com/dotnet/sdk:8.0-bookworm-slim" }
-          - { name: linux-musl-arm, image: "mcr.microsoft.com/dotnet/sdk:8.0-alpine3.21" }
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/download-artifact@v4
-        with:
-          name: native-libs
-          path: native/zig-out/
-
-      - uses: docker/setup-qemu-action@v3
-        with:
-          platforms: arm
-
-      - name: Test in arm32 container
-        run: |
-          docker run --rm --platform linux/arm/v7 \
-            -v "${{ github.workspace }}:/work" -w /work \
-            ${{ matrix.image }} \
-            dotnet test ${{ env.TEST_PROJECT }} -c Release
-
-  # .NET SDK does not support x86 Linux — verify native library only
-  verify-linux-x86:
+  # No native arm32/x86 Linux runners and QEMU can't reliably run .NET — verify only
+  verify-linux-other:
     name: Verify (${{ matrix.name }})
     needs: native
     runs-on: ubuntu-latest
     strategy:
       matrix:
         include:
+          - { name: linux-arm, rid: linux-arm }
+          - { name: linux-musl-arm, rid: linux-musl-arm }
           - { name: linux-x86, rid: linux-x86 }
           - { name: linux-musl-x86, rid: linux-musl-x86 }
     steps:
@@ -156,7 +129,7 @@ jobs:
 
   pack:
     name: Pack NuGet
-    needs: [native, test, test-win-x86, test-linux-musl, test-linux-arm32, verify-linux-x86]
+    needs: [native, test, test-win-x86, test-linux-musl, verify-linux-other]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
