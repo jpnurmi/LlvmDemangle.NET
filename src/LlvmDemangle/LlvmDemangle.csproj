@@ -10,17 +10,21 @@
     <NativeOutDir>$(MSBuildThisFileDirectory)..\..\native\zig-out\</NativeOutDir>
   </PropertyGroup>
 
-  <!-- Copy native library for the current platform to the output directory -->
+  <!-- Copy native library for the current platform to the output directory.
+       Uses ProcessArchitecture to match the SDK bitness (e.g. x86 SDK on x64 OS). -->
+  <PropertyGroup>
+    <NativeArch>$([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture)</NativeArch>
+  </PropertyGroup>
   <ItemGroup Condition="Exists('$(NativeOutDir)')">
-    <Content Include="$(NativeOutDir)win-x86\llvm-demangle.dll" Condition="$([MSBuild]::IsOSPlatform('Windows')) And '$(PlatformTarget)' == 'x86'" CopyToOutputDirectory="PreserveNewest" Link="llvm-demangle.dll" Visible="false" />
-    <Content Include="$(NativeOutDir)win-x64\llvm-demangle.dll" Condition="$([MSBuild]::IsOSPlatform('Windows')) And '$(PlatformTarget)' != 'x86' And '$(PlatformTarget)' != 'ARM64'" CopyToOutputDirectory="PreserveNewest" Link="llvm-demangle.dll" Visible="false" />
-    <Content Include="$(NativeOutDir)win-arm64\llvm-demangle.dll" Condition="$([MSBuild]::IsOSPlatform('Windows')) And '$(PlatformTarget)' == 'ARM64'" CopyToOutputDirectory="PreserveNewest" Link="llvm-demangle.dll" Visible="false" />
-    <Content Include="$(NativeOutDir)linux-x64\libllvm-demangle.so" Condition="$([MSBuild]::IsOSPlatform('Linux')) And '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' == 'X64'" CopyToOutputDirectory="PreserveNewest" Link="libllvm-demangle.so" Visible="false" />
-    <Content Include="$(NativeOutDir)linux-arm64\libllvm-demangle.so" Condition="$([MSBuild]::IsOSPlatform('Linux')) And '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' == 'Arm64'" CopyToOutputDirectory="PreserveNewest" Link="libllvm-demangle.so" Visible="false" />
-    <Content Include="$(NativeOutDir)linux-arm\libllvm-demangle.so" Condition="$([MSBuild]::IsOSPlatform('Linux')) And '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' == 'Arm'" CopyToOutputDirectory="PreserveNewest" Link="libllvm-demangle.so" Visible="false" />
-    <Content Include="$(NativeOutDir)linux-x86\libllvm-demangle.so" Condition="$([MSBuild]::IsOSPlatform('Linux')) And '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' == 'X86'" CopyToOutputDirectory="PreserveNewest" Link="libllvm-demangle.so" Visible="false" />
-    <Content Include="$(NativeOutDir)osx-arm64\libllvm-demangle.dylib" Condition="$([MSBuild]::IsOSPlatform('OSX')) And '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' == 'Arm64'" CopyToOutputDirectory="PreserveNewest" Link="libllvm-demangle.dylib" Visible="false" />
-    <Content Include="$(NativeOutDir)osx-x64\libllvm-demangle.dylib" Condition="$([MSBuild]::IsOSPlatform('OSX')) And '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' == 'X64'" CopyToOutputDirectory="PreserveNewest" Link="libllvm-demangle.dylib" Visible="false" />
+    <Content Include="$(NativeOutDir)win-x86\llvm-demangle.dll" Condition="$([MSBuild]::IsOSPlatform('Windows')) And '$(NativeArch)' == 'X86'" CopyToOutputDirectory="PreserveNewest" Link="llvm-demangle.dll" Visible="false" />
+    <Content Include="$(NativeOutDir)win-x64\llvm-demangle.dll" Condition="$([MSBuild]::IsOSPlatform('Windows')) And '$(NativeArch)' == 'X64'" CopyToOutputDirectory="PreserveNewest" Link="llvm-demangle.dll" Visible="false" />
+    <Content Include="$(NativeOutDir)win-arm64\llvm-demangle.dll" Condition="$([MSBuild]::IsOSPlatform('Windows')) And '$(NativeArch)' == 'Arm64'" CopyToOutputDirectory="PreserveNewest" Link="llvm-demangle.dll" Visible="false" />
+    <Content Include="$(NativeOutDir)linux-x64\libllvm-demangle.so" Condition="$([MSBuild]::IsOSPlatform('Linux')) And '$(NativeArch)' == 'X64'" CopyToOutputDirectory="PreserveNewest" Link="libllvm-demangle.so" Visible="false" />
+    <Content Include="$(NativeOutDir)linux-arm64\libllvm-demangle.so" Condition="$([MSBuild]::IsOSPlatform('Linux')) And '$(NativeArch)' == 'Arm64'" CopyToOutputDirectory="PreserveNewest" Link="libllvm-demangle.so" Visible="false" />
+    <Content Include="$(NativeOutDir)linux-arm\libllvm-demangle.so" Condition="$([MSBuild]::IsOSPlatform('Linux')) And '$(NativeArch)' == 'Arm'" CopyToOutputDirectory="PreserveNewest" Link="libllvm-demangle.so" Visible="false" />
+    <Content Include="$(NativeOutDir)linux-x86\libllvm-demangle.so" Condition="$([MSBuild]::IsOSPlatform('Linux')) And '$(NativeArch)' == 'X86'" CopyToOutputDirectory="PreserveNewest" Link="libllvm-demangle.so" Visible="false" />
+    <Content Include="$(NativeOutDir)osx-arm64\libllvm-demangle.dylib" Condition="$([MSBuild]::IsOSPlatform('OSX')) And '$(NativeArch)' == 'Arm64'" CopyToOutputDirectory="PreserveNewest" Link="libllvm-demangle.dylib" Visible="false" />
+    <Content Include="$(NativeOutDir)osx-x64\libllvm-demangle.dylib" Condition="$([MSBuild]::IsOSPlatform('OSX')) And '$(NativeArch)' == 'X64'" CopyToOutputDirectory="PreserveNewest" Link="libllvm-demangle.dylib" Visible="false" />
   </ItemGroup>
 
   <!-- NuGet: pack all native libraries into runtimes/{rid}/native/ -->

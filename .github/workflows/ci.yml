@@ -5,6 +5,10 @@ on:
     branches: [main]
   pull_request:
 
+env:
+  DOTNET_VERSION: "8.x"
+  TEST_PROJECT: test/LlvmDemangle.Tests/LlvmDemangle.Tests.csproj
+
 jobs:
   native:
     name: Build native libraries
@@ -37,21 +41,21 @@ jobs:
           - { name: win-arm64, os: windows-11-arm }
           - { name: linux-x64, os: ubuntu-latest }
           - { name: linux-arm64, os: ubuntu-24.04-arm }
-          - { name: osx-x64, os: macos-13 }
+          - { name: osx-x64, os: macos-26-intel }
           - { name: osx-arm64, os: macos-latest }
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.x
+          dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - uses: actions/download-artifact@v4
         with:
           name: native-libs
           path: native/zig-out/
 
-      - run: dotnet test -c Release
+      - run: dotnet test ${{ env.TEST_PROJECT }} -c Release
 
   test-win-x86:
     name: Test (win-x86)
@@ -73,13 +77,12 @@ jobs:
 
       - name: Test
         shell: pwsh
-        run: C:\dotnet-x86\dotnet.exe test -c Release
+        run: C:\dotnet-x86\dotnet.exe test ${{ env.TEST_PROJECT }} -c Release
 
   test-linux-musl:
     name: Test (${{ matrix.name }})
     needs: native
     runs-on: ${{ matrix.runner }}
-    container: mcr.microsoft.com/dotnet/sdk:8.0-alpine3.21
     strategy:
       fail-fast: false
       matrix:
@@ -94,7 +97,12 @@ jobs:
           name: native-libs
           path: native/zig-out/
 
-      - run: dotnet test -c Release
+      - name: Test in Alpine container
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}:/work" -w /work \
+            mcr.microsoft.com/dotnet/sdk:8.0-alpine3.21 \
+            dotnet test ${{ env.TEST_PROJECT }} -c Release
 
   test-linux-arm32:
     name: Test (${{ matrix.name }})
@@ -123,7 +131,7 @@ jobs:
           docker run --rm --platform linux/arm/v7 \
             -v "${{ github.workspace }}:/work" -w /work \
             ${{ matrix.image }} \
-            dotnet test -c Release
+            dotnet test ${{ env.TEST_PROJECT }} -c Release
 
   # .NET SDK does not support x86 Linux — verify native library only
   verify-linux-x86:
@@ -155,7 +163,7 @@ jobs:
 
       - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.x
+          dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - uses: actions/download-artifact@v4
         with:
