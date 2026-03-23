@@ -150,3 +150,32 @@ jobs:
         with:
           name: nuget-package
           path: artifacts/*.nupkg
+
+  integration-test:
+    name: Integration (${{ matrix.name }})
+    needs: pack
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: win-x64, os: windows-latest }
+          - { name: win-arm64, os: windows-11-arm }
+          - { name: linux-x64, os: ubuntu-latest }
+          - { name: linux-arm64, os: ubuntu-24.04-arm }
+          - { name: osx-x64, os: macos-26-intel }
+          - { name: osx-arm64, os: macos-latest }
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: nuget-package
+          path: artifacts
+
+      - name: Run integration test against NuGet package
+        run: dotnet run --project test/LlvmDemangle.IntegrationTests/LlvmDemangle.IntegrationTests.csproj -c Release
